@@ -1,0 +1,73 @@
+[h1]R.A.T.S. Rigging[/h1]
+[i]R.A.T.S. – Reconnaissance, Acoustics, Terrain & Signals[/i]
+
+[b]The one part every R.A.T.S. mod shares.[/b]
+Nothing to set up and nothing to switch on yourself: the R.A.T.S. mods name it as a required item, and it makes them start, log and save their settings the same way.
+
+[quote]💬 [b]Questions, help, ideas:[/b] [url=https://discord.gg/CzuHd4f8Yf]R.A.T.S. Discord[/url], the first place to ask
+▶ [b]Requires[/b] [b]R.A.T.S. Keel[/b], the mod loader (Required items, top right)
+✉ Bug reports: [url=https://hub.sewerlabs.dev/s/rigging]R.A.T.S. feedback board[/url]
+⭐ A favourite helps other captains find it[/quote]
+
+[h2]✦ Highlights[/h2]
+[list]
+[*][b]One copy, not six.[/b] Radio, Cities and Borders, Topographic Map, Pop-Out Windows, Sensor Views and Command Tools used to carry their own copy of this code; now they share it
+[*][b]Same start for every mod.[/b] Each mod keeps its own log lines, settings file and keys, hotkeys and map layers: nothing you set changes
+[*][b]A game update switches off a feature, not the mod.[/b] A game method that moved is logged once and only the feature that needs it goes off
+[*][b]Stays off when unticked.[/b] A R.A.T.S. mod you untick in Mods does not start
+[*][b]Settings in the game.[/b] The mods' tabs in Options and their entries in the map's Layers menu come from here
+[/list]
+
+[h2]▶ Quick start[/h2]
+[olist]
+[*]Subscribe, or do nothing: it comes as a required item with the R.A.T.S. mods
+[*]Switch it on in Mods
+[*]Start the game
+[/olist]
+[list]
+[*][b]Loaded?[/b] Keel's report (Ctrl+Shift+K) lists R.A.T.S. Rigging as running
+[*][b]Already have R.A.T.S. mods?[/b] They carry a copy of Rigging for now, so nothing breaks; a notice on the main menu offers this item, with a button that gets it and switches it on
+[/list]
+
+[h2]⚠ Good to know[/h2]
+[list]
+[*][b]Changes nothing[/b] in the game, missions or saves by itself: it holds code the mods use
+[*][b]The built-in copies leave the mods in a later update.[/b] After that, a mod needs this item to start; Keel's card says so and has a Get it button
+[*][b]The newest copy wins.[/b] If a mod's copy and this item are both there, Keel runs the newest and keeps the other out; the report says which
+[*][b]Not a mod you notice:[/b] it adds no window, no unit and no setting of its own, apart from that one notice
+[/list]
+
+[h2]⚙ Install and game versions[/h2]
+[list]
+[*][b]Game:[/b] 0.9.3 (build 261116), the current main version; 0.8.7 is not supported
+[*][b]Run in the game on 0.9.3[/b] (build 261116): RUN_LINE
+[*][b]Needs R.A.T.S. Keel[/b], the mod loader: Keel starts it before the mods that need it
+[/list]
+
+[h2]⚙ For mod makers[/h2]
+[list]
+[*][b]One object per mod:[/b] log, settings file, hooks by feature, mission start and end, an Options tab, map layers, the mod's own per-frame host
+[*][b]Name it as a dependency:[/b] [ACDependency] with a minimum version; the loader starts Rigging first and keeps your mod out, with the reason, when it is missing or too old
+[*][b]Only grows:[/b] the public parts are never removed, so a mod built against an older Rigging runs on a newer one
+[*][b]Details:[/b] [url=https://github.com/struckl/SeaPowerRigging/blob/main/docs/api.md]the API[/url] · [url=https://github.com/struckl/SeaPowerRigging/blob/main/docs/building.md]building a mod on it[/url]
+[/list]
+
+[h2]✉ Problems, feedback, ideas[/h2]
+[list]
+[*][url=https://discord.gg/CzuHd4f8Yf]R.A.T.S. Discord[/url]: questions, help and ideas, the first place to ask
+[*][url=https://hub.sewerlabs.dev/s/rigging]R.A.T.S. feedback board[/url] for bug reports, or Send report in Keel's report window
+[*][b]Videos:[/b] [url=https://www.youtube.com/@SewerRatte]R.A.T.S. on YouTube[/url]
+[/list]
+
+[h2]Support[/h2]
+[list]
+[*]Rigging is free and stays free. If you want to keep the rats fed: [url=https://ko-fi.com/kanalratte_sewerlabs]a cheese on Ko-fi[/url] or [url=https://www.patreon.com/cw/Kanalratte]Patreon[/url]
+[/list]
+
+[h2]Credits[/h2]
+[list]
+[*]The plugin attributes the mods are built against come from Anchor Chain by JustOneOther and agm-114 (SeaPower-Modders, MIT); only used when the mods are built, not shipped
+[*]Source: https://github.com/struckl/SeaPowerRigging (R.A.T.S. Source License: read and fork, no re-uploads)
+[/list]
+
+[i]R.A.T.S. – Ratte's Assorted Tactical Systems[/i]

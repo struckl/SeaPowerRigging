@@ -1,0 +1,5 @@
+1.0.0: the shared part of the R.A.T.S. mods, as an item of its own.
+- New: the code every R.A.T.S. mod used to carry (start, log, settings, hooks, mission events, map layers, Options tab) is one library now; the mods name it as a required item
+- The mods carry a copy of it for now, so players who already have a mod lose nothing; a notice on the main menu offers this item with a button that gets it and switches it on
+- Nothing you set changes: every mod keeps its settings file, keys, hotkeys and log names
+- Needs R.A.T.S. Keel, the mod loader
