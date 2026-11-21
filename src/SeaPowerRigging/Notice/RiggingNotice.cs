@@ -96,14 +96,15 @@ internal sealed class RiggingNotice : MonoBehaviour
         }
         try
         {
-            if (ItemOn())
+            string state = ItemState();
+            if (state == StateOn)
             {
                 Log.Info("Rigging's Workshop item is subscribed and switched on: no notice.");
                 Destroy(gameObject);
                 yield break;
             }
             Show(OfferText, "Get Rigging", GetRigging, "Not now", () => Log.Info("Not now: the built-in copies run this time."), withTick: true);
-            Log.Info("Notice shown: the Workshop item is not there or not switched on.");
+            Log.Info($"Notice shown: the Workshop item is {state}.");
         }
         catch (Exception e)
         {
@@ -133,12 +134,15 @@ internal sealed class RiggingNotice : MonoBehaviour
         !UnityEngine.SceneManagement.SceneManager.GetSceneByName("mission").isLoaded &&
         !UnityEngine.SceneManagement.SceneManager.GetSceneByName("linear-campaign").isLoaded;
 
-    // The item is in the game's mod list and ticked: what the Mods menu shows as switched on.
+    private const string StateOn = "switched on";
+
+    // Where the item stands in the game's mod list: ticked is what the Mods menu shows as switched on. The words go into the log, so a
+    // box that shows although the player ticked the item says what the game's list had.
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static bool ItemOn()
+    private static string ItemState()
     {
         SearchDirectory dir = Singleton<FileManager>.Instance.Directories.FirstOrDefault(d => d.steamId.m_PublishedFileId == Item);
-        return dir != null && dir.IsChecked;
+        return dir == null ? "not in the game's mod list" : dir.IsChecked ? StateOn : "in the game's mod list but switched off";
     }
 
     // ---- the game's message box ----
