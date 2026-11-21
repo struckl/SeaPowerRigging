@@ -46,8 +46,11 @@
     <Reference Include="Libraries"><HintPath>$(ManagedDir)\Libraries.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UniRx"><HintPath>$(ManagedDir)\UniRx.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="AnchorChain"><HintPath>$(AnchorChainRef)</HintPath><Private>false</Private></Reference>
+    <!--OutDir is a global property when a script builds the mod into its own folder (-p:OutDir=...): it must not reach Rigging, or
+        Rigging's DLL would be built into the mod's output instead of Rigging's own bin folder, where compat looks for it.-->
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\SeaPowerRigging\SeaPowerRigging.csproj">
       <Private>false</Private>
+      <GlobalPropertiesToRemove>OutDir;OutputPath</GlobalPropertiesToRemove>
     </ProjectReference>
   </ItemGroup>
 
