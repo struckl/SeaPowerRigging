@@ -28,7 +28,6 @@ internal sealed class RiggingNotice : MonoBehaviour
     private const string TickOff = "[ ] Don't show this again";
     private const string TickOn = "[x] Don't show this again";
     private const float DownloadSeconds = 300f;
-    private const string ItemDll = "SeaPowerRigging.dll";
 
     private const string OfferText =
         "The R.A.T.S. mods now share one part, the Workshop item R.A.T.S. Rigging.\n\n" +
@@ -314,7 +313,7 @@ internal sealed class RiggingNotice : MonoBehaviour
             return null;
         if (!SteamUGC.GetItemInstallInfo(item, out _, out string path, 1024u, out _) || !Directory.Exists(path))
             return null;
-        return File.Exists(Path.Combine(path, ItemDll)) ? path : null;
+        return path;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

@@ -35,10 +35,12 @@ function Build-RatsMod {
     )
     $name = [IO.Path]::GetFileNameWithoutExtension($Project)
     $out = Join-Path (Split-Path -Parent $Project) 'bin\Release\netstandard2.1'
-    $args = @('-c', 'Release', '--no-incremental', '-p:Deploy=false', "-p:GameDir=$GameDir", "-p:ManagedDir=$ManagedDir")
-    if ($Workspace) { $args += "-p:RatsWorkspace=$Workspace" }
-    if ($RiggingDir) { $args += "-p:RatsRigging=$RiggingDir" }
-    dotnet build $Project @args | Out-Host
+    $buildArgs = @('-c', 'Release', '--no-incremental', '-p:Deploy=false', "-p:GameDir=$GameDir", "-p:ManagedDir=$ManagedDir")
+    if ($Workspace) { $buildArgs += "-p:RatsWorkspace=$Workspace" }
+    # The project imports "$(RatsRigging)build\Rats.Mod.props", so the folder needs its closing slash; forward slashes, because a
+    # trailing backslash before the closing quote of a path with a space ("Sea Power") would swallow the quote.
+    if ($RiggingDir) { $buildArgs += ('-p:RatsRigging=' + ($RiggingDir.TrimEnd('\', '/') -replace '\\', '/') + '/') }
+    dotnet build $Project @buildArgs | Out-Host
     if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
     if (Test-Path $Dist) { Remove-Item -Recurse -Force $Dist }
     New-Item -ItemType Directory -Force $Dist | Out-Null
