@@ -1,7 +1,0 @@
-0.7.0: clearer loading window and report, fewer false warnings.
-- Fixed: the loading window counts mods with errors again (a mod that started with errors was not counted, so the card could say "No problems")
-- No more warning for R.A.T.S. flat-map builds on the globe: a DLL whose partner build in the same folder runs fine gets a short note, the card stays green (reports #13, #16)
-- Fixed: Anchor Chain 1.2.0 mods that use FindFile were reported as broken under Keel
-- The crash window uses the same "closed normally" test as Keel at the next start
-- One load path for start-up and the Mods menu reload (a failed reload is logged like a failed start)
-- README: one Linux (Steam Proton) section with every step in order
