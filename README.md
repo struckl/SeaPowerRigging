@@ -1,8 +1,7 @@
 # R.A.T.S. shared mod skeleton
 
 The parts every R.A.T.S. Sea Power mod has in common, kept once. Each mod compiles these files into its own DLL as linked
-source: no mod references Keel at run time, and every mod still runs under Keel or Anchor Chain alike
-(`docs/both-loaders.md` in the workspace).
+source: no mod references Keel at run time (`docs/loader.md` in the workspace).
 
 ## Files
 
