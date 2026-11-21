@@ -24,7 +24,7 @@
     <ManagedDir Condition="'$(ManagedDir)' == ''">$(GameDir)\Sea Power_Data\Managed</ManagedDir>
     <AnchorChainRef Condition="'$(AnchorChainRef)' == ''">$(MSBuildThisFileDirectory)..\..\ref\AnchorChain.keel.bin</AnchorChainRef>
     <!--The Workshop item the notice offers. 0 until the item exists: the notice stays away then.-->
-    <RigItem Condition="'$(RigItem)' == ''">0</RigItem>
+    <RigItem Condition="'$(RigItem)' == ''">3843688859</RigItem>
   </PropertyGroup>
 
   <ItemGroup>
