@@ -2,48 +2,55 @@ using System;
 using System.Collections.Generic;
 using BepInEx.Configuration;
 
-namespace Rats.Shared;
+namespace Rats.Rigging;
 
 /// <summary>
 /// The mod's settings in the game's Options menu. When an options page (SeapowerUI.OptionsMenuView, a Noesis UserControl) has
 /// loaded, a tab with the mod's title is added to its tab control, styled like the game's own tabs; if the page has no tab
 /// control (a game update), the settings go as a group at the end of the Audio tab instead, found through its named controls.
-/// Changes apply at once and are saved by the mod (ModSettings writes the file a moment after the last change); the page's
+/// Changes apply at once and are saved by the mod (RigSettings writes the file a moment after the last change); the page's
 /// Accept / Revert do not touch them.
-/// Only plain Noesis controls are made here, no XAML types: Noesis resolves those by full name across all loaded DLLs, and this
-/// file's names are the same in every mod.
+/// Only plain Noesis controls are made here, no XAML types: Noesis resolves those by full name across all loaded DLLs.
 /// </summary>
-internal static class OptionsPage
+public sealed class RigOptions
 {
-    private static string title;
-    private static Action<OptionsBuilder> fill;
-    private static bool reported;
+    private readonly RigMod mod;
+    private string title;
+    private Action<OptionsBuilder> fill;
+    private bool reported;
 
-    private static string Tag => ModInfo.LogSource + ".Options";
+    internal RigOptions(RigMod mod)
+    {
+        this.mod = mod;
+    }
+
+    private string Tag => mod.Info.LogSource + ".Options";
 
     /// <summary>
-    /// Declares the hook on the options page (once NoesisGUI runs: the page registers dependency properties). <paramref name="tabTitle"/>
-    /// is the tab's header, <paramref name="rows"/> adds the mod's rows.
+    /// Declares the tab: a feature whose hook (on the options page) Rigging installs once NoesisGUI runs, since the page registers
+    /// dependency properties. <paramref name="tabTitle"/> is the tab's header, <paramref name="rows"/> adds the mod's rows.
     /// </summary>
-    public static void Declare(string tabTitle, Action<OptionsBuilder> rows)
+    public void Declare(string tabTitle, Action<OptionsBuilder> rows)
     {
         title = tabTitle;
         fill = rows;
-        HookRegistry.Add("Options page", HookStage.AfterNoesis, "the settings are only in the config file", optional: true)
-            .Hook("SeapowerUI.OptionsMenuView", ".ctor", Type.EmptyTypes, typeof(OptionsPage), postfix: nameof(ViewCreated));
+        mod.Hooks.AddShared("Options page", HookStage.AfterNoesis, "the settings are only in the config file", optional: true, GameHooks.OptionsPage);
     }
 
-    private static void ViewCreated(object __instance)
+    // From the shared hook: every mod that declared a tab adds it to the page.
+    internal void ViewCreated(object view)
     {
+        if (fill == null)
+            return;
         try
         {
-            if (__instance is Noesis.FrameworkElement view)
-                view.Loaded += (s, e) => Attach(view);
+            if (view is Noesis.FrameworkElement element)
+                element.Loaded += (s, e) => Attach(element);
         }
-        catch (Exception ex) { ModLog.Warn("options page: " + ex.Message); }
+        catch (Exception ex) { mod.Log.Warn("options page: " + ex.Message); }
     }
 
-    private static void Attach(Noesis.FrameworkElement view)
+    private void Attach(Noesis.FrameworkElement view)
     {
         try
         {
@@ -59,7 +66,7 @@ internal static class OptionsPage
         }
     }
 
-    private static void AddTab(Noesis.FrameworkElement view, Noesis.TabControl tabs)
+    private void AddTab(Noesis.FrameworkElement view, Noesis.TabControl tabs)
     {
         foreach (object item in tabs.Items)
             if (item is Noesis.FrameworkElement fe && fe.Tag as string == Tag) return;
@@ -77,7 +84,7 @@ internal static class OptionsPage
         Report($"{title} settings added as a tab of the Options menu.");
     }
 
-    private static void AddAudioGroup(Noesis.FrameworkElement view)
+    private void AddAudioGroup(Noesis.FrameworkElement view)
     {
         Noesis.StackPanel audio = FindAudioPanel(view);
         if (audio == null)
@@ -89,17 +96,17 @@ internal static class OptionsPage
             if (audio.Children[i] is Noesis.FrameworkElement fe && fe.Tag as string == Tag) return;
         var group = new Noesis.StackPanel { Tag = Tag, Orientation = Noesis.Orientation.Vertical };
         var builder = new OptionsBuilder(view, group);
-        builder.Header(ModInfo.Name);
+        builder.Header(mod.Info.Name);
         fill(builder);
         audio.Children.Add(group);
         Report($"{title} settings added to the Audio tab of the Options menu (no tab control found).");
     }
 
-    private static void Report(string text, bool warn = false)
+    private void Report(string text, bool warn = false)
     {
         if (reported) return;
         reported = true;
-        if (warn) ModLog.Warn(text); else ModLog.Info(text);
+        if (warn) mod.Log.Warn(text); else mod.Log.Info(text);
     }
 
     private static T Find<T>(Noesis.DependencyObject root, int maxDepth) where T : Noesis.DependencyObject
@@ -134,14 +141,14 @@ internal static class OptionsPage
 }
 
 /// <summary>Adds rows to the mod's part of the options page, in the page's own styles where it has them.</summary>
-internal sealed class OptionsBuilder
+public sealed class OptionsBuilder
 {
     private readonly Noesis.StackPanel panel;
     private readonly Noesis.Style headerStyle, labelStyle;
     private readonly Noesis.Brush highlight;
     private readonly float noteSize;
 
-    public OptionsBuilder(Noesis.FrameworkElement view, Noesis.StackPanel panel)
+    internal OptionsBuilder(Noesis.FrameworkElement view, Noesis.StackPanel panel)
     {
         this.panel = panel;
         headerStyle = view.TryFindResource("OptionsSectionHeader") as Noesis.Style;

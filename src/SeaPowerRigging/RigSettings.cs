@@ -5,34 +5,43 @@ using BepInEx;
 using BepInEx.Configuration;
 using UnityEngine;
 
-namespace Rats.Shared;
+namespace Rats.Rigging;
 
 /// <summary>
-/// The mod's BepInEx config at BepInEx\config\(ModInfo.Guid).cfg: section "1. General" (Enable mod, Verbose log) here, the mod's
-/// own entries bound by the mod. The file is written a moment after the last change instead of on every set: the Options page
-/// and the windows set values on every slider step.
+/// The mod's BepInEx config at BepInEx\config\(Guid).cfg: section "1. General" (Enable mod, Verbose log) here, the mod's own entries
+/// bound by the mod. The file is written a moment after the last change instead of on every set: the Options page and the windows
+/// set values on every slider step.
 /// </summary>
-internal static class ModSettings
+public sealed class RigSettings
 {
     public const string DefaultVerboseHelp = "Write debug detail to BepInEx/LogOutput.log.";
     private const float SaveDelay = 1f;
 
-    public static ConfigFile File { get; private set; }
+    private readonly RigInfo info;
+    private readonly RigLog log;
+    private float saveAt = -1f;
+
+    internal RigSettings(RigInfo info, RigLog log)
+    {
+        this.info = info;
+        this.log = log;
+    }
+
+    public ConfigFile File { get; private set; }
 
     /// <summary>A config file was there before this start (a player who had the mod before).</summary>
-    public static bool Existed { get; private set; }
+    public bool Existed { get; private set; }
 
-    public static ConfigEntry<bool> Enabled { get; private set; }
-    public static ConfigEntry<bool> VerboseLog { get; private set; }
+    public ConfigEntry<bool> Enabled { get; private set; }
 
-    public static bool Verbose => VerboseLog != null && VerboseLog.Value;
+    public ConfigEntry<bool> VerboseLog { get; private set; }
 
-    private static float saveAt = -1f;
+    public bool Verbose => VerboseLog != null && VerboseLog.Value;
 
     /// <summary>Opens the config, binds the General section, then the mod's entries through <paramref name="bind"/>, and writes the file once.</summary>
-    public static void Open(Action<ConfigFile> bind, string verboseHelp = DefaultVerboseHelp)
+    internal void Open(Action<ConfigFile> bind, string verboseHelp = DefaultVerboseHelp)
     {
-        string path = Path.Combine(Paths.ConfigPath, ModInfo.Guid + ".cfg");
+        string path = Path.Combine(Paths.ConfigPath, info.Guid + ".cfg");
         Existed = System.IO.File.Exists(path);
         File = new ConfigFile(path, saveOnInit: true) { SaveOnConfigSet = false };
         Enabled = File.Bind("1. General", "Enable mod", true, "Master switch. Needs a restart.");
@@ -57,21 +66,21 @@ internal static class ModSettings
         }
     }
 
-    /// <summary>From ModHost every frame: writes the file once the last change is a moment old.</summary>
-    public static void FlushIfDue()
+    /// <summary>From the host every frame: writes the file once the last change is a moment old.</summary>
+    internal void FlushIfDue()
     {
         if (saveAt >= 0f && Time.unscaledTime >= saveAt)
             Flush();
     }
 
-    /// <summary>Writes pending changes now (ModHost, when the game closes).</summary>
-    public static void Flush()
+    /// <summary>Writes pending changes now (the host, when the game closes).</summary>
+    internal void Flush()
     {
         if (saveAt < 0f)
             return;
         saveAt = -1f;
         try { File?.Save(); }
-        catch (Exception ex) { ModLog.Warn($"Could not save the settings: {ex.Message}"); }
+        catch (Exception ex) { log.Warn($"Could not save the settings: {ex.Message}"); }
     }
 }
 
@@ -79,27 +88,27 @@ internal static class ModSettings
 /// Counts changes of one group of settings, so each part of a mod redraws only for the settings it reads (one counter for all
 /// settings made every change, even one written back every second, throw everything away).
 /// </summary>
-internal sealed class ChangeCounter
+public sealed class ChangeCounter
 {
     private readonly HashSet<ConfigEntryBase> entries;
     private readonly bool allBut;
 
-    public int Version { get; private set; }
-
-    private ChangeCounter(ConfigEntryBase[] entries, bool allBut)
+    private ChangeCounter(ConfigFile file, ConfigEntryBase[] entries, bool allBut)
     {
         this.entries = new HashSet<ConfigEntryBase>(entries);
         this.allBut = allBut;
-        ModSettings.File.SettingChanged += (s, e) =>
+        file.SettingChanged += (s, e) =>
         {
             if (this.entries.Contains(e.ChangedSetting) != this.allBut)
                 Version++;
         };
     }
 
-    /// <summary>Moves when one of these entries changes.</summary>
-    public static ChangeCounter Of(params ConfigEntryBase[] entries) => new ChangeCounter(entries, false);
+    public int Version { get; private set; }
 
-    /// <summary>Moves when any entry but these changes.</summary>
-    public static ChangeCounter AllBut(params ConfigEntryBase[] entries) => new ChangeCounter(entries, true);
+    /// <summary>Moves when one of these entries of <paramref name="file"/> changes.</summary>
+    public static ChangeCounter Of(ConfigFile file, params ConfigEntryBase[] entries) => new ChangeCounter(file, entries, false);
+
+    /// <summary>Moves when any entry of <paramref name="file"/> but these changes.</summary>
+    public static ChangeCounter AllBut(ConfigFile file, params ConfigEntryBase[] entries) => new ChangeCounter(file, entries, true);
 }

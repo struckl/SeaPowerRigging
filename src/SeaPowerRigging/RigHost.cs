@@ -1,26 +1,27 @@
 using System;
 using UnityEngine;
 
-namespace Rats.Shared;
+namespace Rats.Rigging;
 
 /// <summary>
 /// The mod's per-frame object, on a hidden object that lives for the whole game. It applies the hooks that wait for NoesisGUI,
 /// passes mission start and end on, writes the settings, and stops all Noesis work when the game closes. A mod's host derives
 /// from it and fills in Tick, OnMissionReady, OnMissionEnded and Teardown.
 /// </summary>
-internal abstract class ModHost : MonoBehaviour
+public abstract class RigHost : MonoBehaviour
 {
     private const int ErrorCap = 5;
 
-    public static ModHost Instance { get; private set; }
-
-    /// <summary>True from the moment the game starts to close: nothing touches Noesis after that.</summary>
-    public static bool Quitting { get; private set; }
+    // Unity runs Awake inside AddComponent, before the creator can hand the mod's object over.
+    private static RigMod creating;
 
     private enum StageTwo { Waiting, Applied }
     private StageTwo stageTwo;
     private float nextHookCheck;
     private int errors;
+
+    /// <summary>The mod's own Rigging object: log, settings, hooks, mission events.</summary>
+    protected RigMod Mod { get; private set; }
 
     /// <summary>Logged once the AfterNoesis hooks are in place; null for none.</summary>
     protected virtual string StageTwoReady => null;
@@ -28,34 +29,45 @@ internal abstract class ModHost : MonoBehaviour
     /// <summary>How often to look whether NoesisGUI runs yet.</summary>
     protected virtual float HookPollSeconds => 1f;
 
-    /// <summary>The host object, from ModEntry once the load-stage hooks are in.</summary>
-    internal static T Create<T>() where T : ModHost
+    /// <summary>The host object, made by <see cref="RigMod.Start"/> once the load-stage hooks are in.</summary>
+    internal static T Create<T>(RigMod rig) where T : RigHost
     {
-        var go = new GameObject(ModInfo.LogSource);
-        DontDestroyOnLoad(go);
-        go.hideFlags = HideFlags.HideAndDontSave;
-        return go.AddComponent<T>();
+        creating = rig;
+        try
+        {
+            var go = new GameObject(rig.Info.LogSource);
+            DontDestroyOnLoad(go);
+            go.hideFlags = HideFlags.HideAndDontSave;
+            return go.AddComponent<T>();
+        }
+        finally
+        {
+            creating = null;
+        }
     }
 
     protected virtual void Awake()
     {
-        Instance = this;
-        MissionHooks.Started += MissionStarted;
-        MissionHooks.Ended += MissionEnded;
+        Mod = creating ?? throw new InvalidOperationException("A host is made by RigMod.Start only.");
+        Mod.Host = this;
+        Mod.Mission.Started += MissionStarted;
+        Mod.Mission.Ended += MissionEnded;
     }
 
     protected virtual void OnDestroy()
     {
-        MissionHooks.Started -= MissionStarted;
-        MissionHooks.Ended -= MissionEnded;
-        if (Instance == this)
-            Instance = null;
+        if (Mod == null)
+            return;
+        Mod.Mission.Started -= MissionStarted;
+        Mod.Mission.Ended -= MissionEnded;
+        if (Mod.Host == this)
+            Mod.Host = null;
     }
 
     private void Update()
     {
         PollStageTwo();
-        ModSettings.FlushIfDue();
+        Mod.Settings.FlushIfDue();
         try { Tick(); }
         catch (Exception ex) { ReportError("update: " + ex); }
     }
@@ -77,7 +89,7 @@ internal abstract class ModHost : MonoBehaviour
     protected void ReportError(string text)
     {
         if (errors++ < ErrorCap)
-            ModLog.Error(text);
+            Mod.Log.Error(text);
     }
 
     private void PollStageTwo()
@@ -88,15 +100,15 @@ internal abstract class ModHost : MonoBehaviour
         if (!GameBuild.NoesisUp())
             return;
         stageTwo = StageTwo.Applied;
-        if (HookRegistry.ApplyStage(HookStage.AfterNoesis) && StageTwoReady != null)
-            ModLog.Info(StageTwoReady);
+        if (Mod.Hooks.ApplyStage(HookStage.AfterNoesis) && StageTwoReady != null)
+            Mod.Log.Info(StageTwoReady);
     }
 
     private void MissionStarted() => OnMissionReady();
 
     private void MissionEnded()
     {
-        if (!Quitting)
+        if (!Mod.Quitting)
             OnMissionEnded();
     }
 
@@ -107,9 +119,9 @@ internal abstract class ModHost : MonoBehaviour
     /// </summary>
     private void OnApplicationQuit()
     {
-        ModSettings.Flush();
-        Quitting = true;
+        Mod.Settings.Flush();
+        Mod.Quitting = true;
         try { Teardown(); }
-        catch (Exception ex) { ModLog.Debug($"teardown on quit: {ex.Message}"); }
+        catch (Exception ex) { Mod.Log.Debug($"teardown on quit: {ex.Message}"); }
     }
 }

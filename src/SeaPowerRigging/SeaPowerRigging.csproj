@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--R.A.T.S. Rigging: the parts every R.A.T.S. Sea Power mod has in common, as one DLL for the game's current main version.
+      A mod references this project through build\Rats.Mod.props (a ProjectReference with Private=false: the DLL is not copied
+      into the mod's output; a package carries it as a built-in copy, see build\RatsPackage.psm1).
+      dotnet build -p:GameDir="D:\Steam\steamapps\common\Sea Power" points it at another install, -p:ManagedDir at a copy of the
+      game's Managed folder (modtool does). -p:RigItem=<id> sets the Workshop item the notice offers (a test build may name another).-->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>SeaPowerRigging</AssemblyName>
+    <RootNamespace>Rats.Rigging</RootNamespace>
+    <Product>R.A.T.S. Rigging</Product>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <RestoreAdditionalProjectSources>
+      https://api.nuget.org/v3/index.json;
+      https://nuget.bepinex.dev/v3/index.json
+    </RestoreAdditionalProjectSources>
+    <GameDir Condition="'$(GameDir)' == ''">E:\Games\steamapps\common\Sea Power</GameDir>
+    <ManagedDir Condition="'$(ManagedDir)' == ''">$(GameDir)\Sea Power_Data\Managed</ManagedDir>
+    <AnchorChainRef Condition="'$(AnchorChainRef)' == ''">$(MSBuildThisFileDirectory)..\..\ref\AnchorChain.keel.bin</AnchorChainRef>
+    <!--The Workshop item the notice offers. 0 until the item exists: the notice stays away then.-->
+    <RigItem Condition="'$(RigItem)' == ''">0</RigItem>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Core" Version="5.4.21" IncludeAssets="compile" PrivateAssets="all" />
+    <PackageReference Include="HarmonyX" Version="2.9.0" IncludeAssets="compile" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Seapower-Scripts"><HintPath>$(ManagedDir)\Seapower-Scripts.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Noesis.NoesisGUI"><HintPath>$(ManagedDir)\Noesis.NoesisGUI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine"><HintPath>$(ManagedDir)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Libraries"><HintPath>$(ManagedDir)\Libraries.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UniRx"><HintPath>$(ManagedDir)\UniRx.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="com.rlabrecque.steamworks.net"><HintPath>$(ManagedDir)\com.rlabrecque.steamworks.net.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="AnchorChain"><HintPath>$(AnchorChainRef)</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>Rigging.WorkshopItem</_Parameter1>
+      <_Parameter2>$(RigItem)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

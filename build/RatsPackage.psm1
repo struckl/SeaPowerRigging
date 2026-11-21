@@ -1,6 +1,6 @@
-# The steps every R.A.T.S. Sea Power mod's tools\package.ps1 shares: build both games' DLLs, check them against both games,
-# stage the common files, install. A mod's script keeps its parameters and its own extra files; README.md next to the shared
-# folder shows a script that uses this module.
+# The steps every R.A.T.S. Sea Power mod's tools\package.ps1 shares: build the DLL, check it against the game and against Rigging,
+# stage the common files and Rigging's built-in copy, install. A mod's script keeps its parameters and its own extra files;
+# README.md in the Rigging repo shows a script that uses this module.
 
 $ErrorActionPreference = 'Stop'
 
@@ -15,67 +15,55 @@ function Find-RatsWorkspace {
     throw "No workspace (a folder with mods.json) above $From - pass -Workspace."
 }
 
+function Get-RatsRiggingDll {
+    # Rigging's built DLL: what a mod compiles against and what a package carries as its built-in copy.
+    param([Parameter(Mandatory)][string]$Workspace, [string]$RiggingDir)
+    if (-not $RiggingDir) { $RiggingDir = Join-Path $Workspace 'SeaPowerRigging' }
+    return Join-Path $RiggingDir 'src\SeaPowerRigging\bin\Release\netstandard2.1\SeaPowerRigging.dll'
+}
+
 function Build-RatsMod {
-    # The globe build, then (unless -NoFlat) the flat-map build. --no-incremental on both, or the second build may reuse the
-    # first one's output. Copies the DLLs into $Dist (made fresh) and returns their names.
+    # One build against the game's current assemblies. --no-incremental, or a stale DLL may be reused. Copies the DLL into $Dist
+    # (made fresh) and returns its name. Rigging is built first as the project's reference.
     param(
         [Parameter(Mandatory)][string]$Project,
         [Parameter(Mandatory)][string]$Dist,
         [Parameter(Mandatory)][string]$GameDir,
-        [Parameter(Mandatory)][string]$GlobeManagedDir,
-        [string]$FlatManagedDir,
+        [Parameter(Mandatory)][string]$ManagedDir,
         [string]$Workspace,
-        [switch]$NoFlat,
-        [switch]$SingleBuild
+        [string]$RiggingDir
     )
     $name = [IO.Path]::GetFileNameWithoutExtension($Project)
     $out = Join-Path (Split-Path -Parent $Project) 'bin\Release\netstandard2.1'
-    $common = @('-c', 'Release', '--no-incremental', '-p:Deploy=false', "-p:GameDir=$GameDir")
-    if ($Workspace) { $common += "-p:RatsWorkspace=$Workspace" }
-    dotnet build $Project @common "-p:ManagedDir=$GlobeManagedDir" | Out-Host
-    if ($LASTEXITCODE -ne 0) { throw 'Globe build failed (with the game on 0.8.7, pass -GlobeManagedDir with the globe version''s assemblies).' }
+    $args = @('-c', 'Release', '--no-incremental', '-p:Deploy=false', "-p:GameDir=$GameDir", "-p:ManagedDir=$ManagedDir")
+    if ($Workspace) { $args += "-p:RatsWorkspace=$Workspace" }
+    if ($RiggingDir) { $args += "-p:RatsRigging=$RiggingDir" }
+    dotnet build $Project @args | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
     if (Test-Path $Dist) { Remove-Item -Recurse -Force $Dist }
     New-Item -ItemType Directory -Force $Dist | Out-Null
     Copy-Item (Join-Path $out "$name.dll") $Dist
-    $dlls = @("$name.dll")
-    if ($SingleBuild -or $NoFlat) { return $dlls }
-    if (-not (Test-Path (Join-Path $FlatManagedDir 'Seapower-Scripts.dll'))) { throw "No 0.8.7 assemblies in $FlatManagedDir (a copy of its Sea Power_Data\Managed, or pass -NoFlat)." }
-    dotnet build $Project @common -p:GameBuild=Flat "-p:FlatManagedDir=$FlatManagedDir" | Out-Host
-    if ($LASTEXITCODE -ne 0) { throw 'Flat-map build failed.' }
-    Copy-Item (Join-Path $out "${name}Flat.dll") $Dist
-    return $dlls + "${name}Flat.dll"
+    return @("$name.dll")
 }
 
 function Test-RatsCompat {
-    # Each DLL against both games' assemblies (the workspace's tools\compat-check): nothing missing on its own game, and on the
-    # other game its entry point nothing missing and every type loadable (--classload: Unity's ECS start-up loads every type of
-    # every loaded assembly, so one field of a type the other game lacks stops all missions there, although the DLL stays off).
-    # A single-build DLL must fit both games whole.
+    # Each DLL against the game's assemblies (the workspace's tools\compat-check): nothing missing, every type loadable
+    # (--classload: Unity's ECS start-up loads every type of every loaded assembly) and every member of Rigging it uses there
+    # (--also: the folder holding SeaPowerRigging.dll).
     param(
         [Parameter(Mandatory)][string]$Workspace,
         [Parameter(Mandatory)][string]$Dist,
         [Parameter(Mandatory)][string]$RootNamespace,
-        [Parameter(Mandatory)][string]$GlobeManagedDir,
-        [Parameter(Mandatory)][string]$FlatManagedDir,
-        [switch]$SingleBuild
+        [Parameter(Mandatory)][string]$ManagedDir,
+        [string]$RiggingDir
     )
     $tool = Join-Path $Workspace 'tools\compat-check'
-    if (-not (Test-Path $tool)) { throw "tools\compat-check not found in $Workspace - the DLLs cannot be checked against both games." }
+    if (-not (Test-Path $tool)) { throw "tools\compat-check not found in $Workspace - the DLL cannot be checked against the game." }
+    $rigging = Split-Path -Parent (Get-RatsRiggingDll -Workspace $Workspace -RiggingDir $RiggingDir)
     dotnet build $tool -c Release -v q | Out-Null
-    $gates = @('--gate', "$RootNamespace.Plugin::TriggerEntryPoint", '--gate', "$RootNamespace.Plugin::.ctor")
     foreach ($dll in Get-ChildItem $Dist -Filter "$RootNamespace*.dll") {
-        $flat = $dll.BaseName.EndsWith('Flat')
-        $own = if ($flat) { $FlatManagedDir } else { $GlobeManagedDir }
-        $other = if ($flat) { $GlobeManagedDir } else { $FlatManagedDir }
-        dotnet run --project $tool -c Release --no-build -- $dll.FullName --against $own --quiet
-        if ($LASTEXITCODE -ne 0) { throw "$($dll.Name) references things its own game does not have." }
-        if ($SingleBuild) {
-            dotnet run --project $tool -c Release --no-build -- $dll.FullName --against $other --quiet
-            if ($LASTEXITCODE -ne 0) { throw "$($dll.Name) references things the other game does not have." }
-            continue
-        }
-        dotnet run --project $tool -c Release --no-build -- $dll.FullName --against $other --quiet --classload @gates
-        if ($LASTEXITCODE -ne 0) { throw "$($dll.Name): the entry point or a type's fields would fail on the other game." }
+        dotnet run --project $tool -c Release --no-build -- $dll.FullName --against $ManagedDir --also $rigging --classload --quiet
+        if ($LASTEXITCODE -ne 0) { throw "$($dll.Name) references things the game or Rigging does not have." }
     }
 }
 
@@ -92,6 +80,20 @@ function Copy-RatsCommon {
     Copy-Item (Join-Path $Root 'CHANGELOG.md') $Dist
     $preview = Join-Path $Root 'workshop\preview.jpg'
     if (Test-Path $preview) { Copy-Item $preview $Dist } else { Write-Warning 'workshop\preview.jpg missing - nothing to pick as the Workshop preview.' }
+}
+
+function Copy-RatsRiggingCopy {
+    # The built-in copy of Rigging every code mod's package carries for a while: players who have not subscribed to the item
+    # yet still run the mod (the loader runs the newest copy of one plugin id), and Rigging's notice offers them the item.
+    param(
+        [Parameter(Mandatory)][string]$Workspace,
+        [Parameter(Mandatory)][string]$Dist,
+        [string]$RiggingDir
+    )
+    $dll = Get-RatsRiggingDll -Workspace $Workspace -RiggingDir $RiggingDir
+    if (-not (Test-Path $dll)) { throw "Rigging is not built ($dll)." }
+    Copy-Item $dll $Dist
+    Write-Host "Built-in copy of Rigging $((Get-Item $dll).VersionInfo.FileVersion) added."
 }
 
 function Get-RatsModVersion {
@@ -131,4 +133,4 @@ function Install-RatsMod {
     Write-Host "Installed to $target - pick this folder in Mods > Create Mod."
 }
 
-Export-ModuleMember -Function Find-RatsWorkspace, Build-RatsMod, Test-RatsCompat, Copy-RatsCommon, Get-RatsModVersion, Show-RatsStage, New-RatsZip, Install-RatsMod
+Export-ModuleMember -Function Find-RatsWorkspace, Get-RatsRiggingDll, Build-RatsMod, Test-RatsCompat, Copy-RatsCommon, Copy-RatsRiggingCopy, Get-RatsModVersion, Show-RatsStage, New-RatsZip, Install-RatsMod

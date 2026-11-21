@@ -1,17 +1,14 @@
 <Project>
   <!--The common part of every R.A.T.S. Sea Power mod's project, imported by its csproj after the mod's own properties
-      (AssemblyName, RootNamespace, Product, Version and the switches below). README.md next to this file says how a mod
-      links it.
+      (AssemblyName, RootNamespace, Product, Version). README.md in the Rigging repo says how a mod uses it.
 
       Paths are found from properties, never from ..\..\..\ (that broke builds from worktrees and clones):
       - RatsWorkspace: the workspace root (the folder holding mods.json); the csproj finds it above itself, -p:RatsWorkspace overrides
-      - RatsShared: this folder; the csproj sets it before the import, -p:RatsShared points a build at another copy (a worktree)
+      - RatsRigging: the Rigging repo, the folder above this one; the csproj sets it before the import, -p:RatsRigging points
+        a build at another copy (a Rigging worktree)
 
-      Switches a mod sets before the import:
-      - RatsSingleBuild=true: one DLL for both games (no flat-map build, no game gate)
-      - RatsUseLayers=true: LayerEntry.cs (map Layers menu entries), with GameReflection.cs on the globe build
-      - RatsUseReflection=true: GameReflection.cs alone (globe build)
-      - RatsUseOptionsPage=true: OptionsPage.cs (a tab in the game's Options menu)
+      The mod references SeaPowerRigging.dll through a project reference (built on demand, never copied into the mod's output).
+      Properties a mod may set before the import:
       - ModFilesRoot: folder of the files deployed next to the DLL (default mod\ in the project folder)
       - ModFolder: the mod's folder under StreamingAssets (default RootNamespace)-->
   <PropertyGroup>
@@ -28,24 +25,12 @@
         or point -p:ManagedDir at a reference copy of the game's Managed folder (modtool does).-->
     <GameDir Condition="'$(GameDir)' == ''">E:\Games\steamapps\common\Sea Power</GameDir>
     <ManagedDir Condition="'$(ManagedDir)' == ''">$(GameDir)\Sea Power_Data\Managed</ManagedDir>
-    <!--Anchor Chain's library, to compile the entry point against: the copy Keel ships, so no build needs the Anchor Chain
-        item. AnchorChainDir or AnchorChainRef override it.-->
-    <AnchorChainRef Condition="'$(AnchorChainRef)' == '' And '$(AnchorChainDir)' != ''">$(AnchorChainDir)\AnchorChain.dll</AnchorChainRef>
-    <AnchorChainRef Condition="'$(AnchorChainRef)' == ''">$(MSBuildThisFileDirectory)..\lib\AnchorChain.keel.bin</AnchorChainRef>
+    <!--Anchor Chain's library, to compile the entry point against: the copy in ref\, so no build needs the Anchor Chain item
+        or the Keel repo. AnchorChainRef overrides it.-->
+    <AnchorChainRef Condition="'$(AnchorChainRef)' == ''">$(MSBuildThisFileDirectory)..\ref\AnchorChain.keel.bin</AnchorChainRef>
     <ModFolder Condition="'$(ModFolder)' == ''">$(RootNamespace)</ModFolder>
     <ModFilesRoot Condition="'$(ModFilesRoot)' == ''">mod\</ModFilesRoot>
     <ModDeployDir>$(GameDir)\Sea Power_Data\StreamingAssets\$(ModFolder)</ModDeployDir>
-    <DefineConstants Condition="'$(RatsSingleBuild)' == 'true'">$(DefineConstants);RATS_SINGLE_BUILD</DefineConstants>
-  </PropertyGroup>
-
-  <!--The flat-map build for Sea Power 0.8.7: the same source with FLATMAP defined, built against 0.8.7's assemblies as
-      <AssemblyName>Flat.dll. It stays off on the globe game and the globe build stays off on 0.8.7 (docs/both-versions.md
-      in the workspace). dotnet build -p:GameBuild=Flat [-p:FlatManagedDir=...\Managed]-->
-  <PropertyGroup Condition="'$(GameBuild)' == 'Flat' And '$(RatsSingleBuild)' != 'true'">
-    <AssemblyName>$(AssemblyName)Flat</AssemblyName>
-    <DefineConstants>$(DefineConstants);FLATMAP</DefineConstants>
-    <FlatManagedDir Condition="'$(FlatManagedDir)' == ''">$([MSBuild]::EnsureTrailingSlash('$(RatsWorkspace)'))_gamerefs\SeaPower-0.8.7-public\Managed</FlatManagedDir>
-    <ManagedDir>$(FlatManagedDir)</ManagedDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -61,20 +46,9 @@
     <Reference Include="Libraries"><HintPath>$(ManagedDir)\Libraries.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UniRx"><HintPath>$(ManagedDir)\UniRx.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="AnchorChain"><HintPath>$(AnchorChainRef)</HintPath><Private>false</Private></Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)GameBuild.cs" Link="Shared\GameBuild.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)HookRegistry.cs" Link="Shared\HookRegistry.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)MissionHooks.cs" Link="Shared\MissionHooks.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ModEntry.cs" Link="Shared\ModEntry.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ModHost.cs" Link="Shared\ModHost.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ModLog.cs" Link="Shared\ModLog.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ModSettings.cs" Link="Shared\ModSettings.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ModState.cs" Link="Shared\ModState.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LayerEntry.cs" Link="Shared\LayerEntry.cs" Condition="'$(RatsUseLayers)' == 'true'" />
-    <Compile Include="$(MSBuildThisFileDirectory)GameReflection.cs" Link="Shared\GameReflection.cs" Condition="'$(RatsUseLayers)' == 'true' Or '$(RatsUseReflection)' == 'true'" />
-    <Compile Include="$(MSBuildThisFileDirectory)OptionsPage.cs" Link="Shared\OptionsPage.cs" Condition="'$(RatsUseOptionsPage)' == 'true'" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\SeaPowerRigging\SeaPowerRigging.csproj">
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

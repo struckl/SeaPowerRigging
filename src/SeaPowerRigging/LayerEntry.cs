@@ -5,15 +5,16 @@ using BepInEx.Configuration;
 using SeaPower;
 using SeapowerUI;
 
-namespace Rats.Shared;
+namespace Rats.Rigging;
 
 /// <summary>
-/// An entry in the map's Layers menu (the menu lists the layer manager's layers, so one more MapLayer there gets a checkbox like
+/// An entry in the map's Layers menu (the menu lists the display state's layers, so one more MapLayer there gets a checkbox like
 /// the stock layers). Its state is kept in the mod's config.
 /// Numbers: Better Tac Map uses 500-509, Topographic Map 600, Borders 601, Cities 602, Sensor lines 603, Sensor coverage 604.
 /// </summary>
-internal sealed class LayerEntry
+public sealed class LayerEntry
 {
+    private readonly RigLog log;
     private readonly int preferredNumber;
     private readonly string name, displayName;
     private readonly ConfigEntry<bool> visible;
@@ -21,8 +22,9 @@ internal sealed class LayerEntry
     private MapLayer layer;
     private bool failed;
 
-    public LayerEntry(int preferredNumber, string name, string displayName, ConfigEntry<bool> visible)
+    public LayerEntry(RigLog log, int preferredNumber, string name, string displayName, ConfigEntry<bool> visible)
     {
+        this.log = log;
         this.preferredNumber = preferredNumber;
         this.name = name;
         this.displayName = displayName;
@@ -43,7 +45,7 @@ internal sealed class LayerEntry
         catch (Exception ex)
         {
             failed = true;
-            ModLog.Error($"Could not add the map layer '{displayName}', use the toggle key instead: {ex}");
+            log.Error($"Could not add the map layer '{displayName}', use the toggle key instead: {ex}");
         }
     }
 
@@ -55,26 +57,7 @@ internal sealed class LayerEntry
             visible.Value = !visible.Value;
     }
 
-#if FLATMAP
-    // Sea Power 0.8.7: one layer manager for the whole game.
-    private void Register()
-    {
-        GizmoLayerManager manager = GizmoLayerManager.Instance;
-        if (manager.LayersByName.TryGetValue(name, out MapLayer existing))
-        {
-            Adopt(existing);
-            return;
-        }
-        int number = FreeNumber(manager.LayersById);
-        NameInMenu();
-        var created = new MapLayer(number, name, true);
-        manager.Layers.Add(created);
-        manager.LayersByName[name] = created;
-        manager.LayersById[number] = created;
-        Added(created, number);
-    }
-#else
-    // The 3D-globe build: every map has its own display state with its own layer list.
+    // Every map has its own display state with its own layer list.
     private void Register()
     {
         MapDisplayState state = MapDisplayState.Tactical;
@@ -90,7 +73,7 @@ internal sealed class LayerEntry
             !(state.LayersById is IDictionary<int, MapLayer> byId))
         {
             failed = true;
-            ModLog.Warn($"The map's layer list has changed - no '{displayName}' entry in the Layers menu; the toggle key still works.");
+            log.Warn($"The map's layer list has changed - no '{displayName}' entry in the Layers menu; the toggle key still works.");
             return;
         }
         state.Layers.Add(created);
@@ -98,7 +81,6 @@ internal sealed class LayerEntry
         byId[number] = created;
         Added(created, number);
     }
-#endif
 
     private int FreeNumber(IReadOnlyDictionary<int, MapLayer> taken)
     {
@@ -115,7 +97,7 @@ internal sealed class LayerEntry
     private void Added(MapLayer created, int number)
     {
         Adopt(created);
-        ModLog.Info($"Map layer '{displayName}' added to the Layers menu (#{number}), {(created.Visible ? "on" : "off")}.");
+        log.Info($"Map layer '{displayName}' added to the Layers menu (#{number}), {(created.Visible ? "on" : "off")}.");
     }
 
     private void Adopt(MapLayer l)

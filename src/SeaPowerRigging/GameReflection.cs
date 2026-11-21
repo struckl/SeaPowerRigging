@@ -1,19 +1,15 @@
-#if !FLATMAP
 using System;
 using System.Reflection;
 using SeaPower.LiveMap;
 using SeapowerUI;
 
-namespace Rats.Shared;
+namespace Rats.Rigging;
 
 /// <summary>
-/// The few members of the 3D-globe build the mods need that the game keeps internal, looked up by reflection. Each lookup that
-/// fails is logged once and its feature falls back (see the callers).
-/// Fields hold only plain types (Type, ConstructorInfo, Delegate): Unity's ECS start-up loads every type of every loaded
-/// assembly, and a field of a type 0.8.7 lacks (Func of MapPalette) makes the class unloadable there - ECS then fails and no
-/// mission loads, although this globe DLL stays off on 0.8.7. tools/compat-check --classload guards this.
+/// The few members of the game the mods need that it keeps internal, looked up by reflection. Each lookup that fails is logged
+/// once and its feature falls back (see the callers). These are facts about the game, the same for every mod, so they are static.
 /// </summary>
-internal static class GameReflection
+public static class GameReflection
 {
     public const BindingFlags Any = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
@@ -37,7 +33,7 @@ internal static class GameReflection
     }
 
     /// <summary>A new entry for a map's Layers menu; null if the game's layer type has changed.</summary>
-    public static MapLayer NewLayer(MapDisplayState owner, int number, string name, bool visible)
+    internal static MapLayer NewLayer(MapDisplayState owner, int number, string name, bool visible)
     {
         if (LayerCtor == null)
             return null;
@@ -45,16 +41,15 @@ internal static class GameReflection
         return (MapLayer)LayerCtor.Invoke(new[] { owner, entry, (object)visible });
     }
 
-    /// <summary>A getter of a property the game keeps internal, as a plain Delegate (see above); null with a warning when it is gone.</summary>
-    public static Delegate Getter<T, TResult>(string property)
+    /// <summary>A getter of a property the game keeps internal, as a plain Delegate; null with a warning when it is gone.</summary>
+    private static Delegate Getter<T, TResult>(string property)
     {
         MethodInfo get = typeof(T).GetProperty(property, Any)?.GetGetMethod(nonPublic: true);
         if (get == null)
         {
-            ModLog.Warn($"{typeof(T).Name}.{property} not found (game updated?)");
+            RigCore.Log.Warn($"{typeof(T).Name}.{property} not found (game updated?)");
             return null;
         }
         return Delegate.CreateDelegate(typeof(Func<T, TResult>), get);
     }
 }
-#endif
