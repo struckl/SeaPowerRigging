@@ -12,7 +12,7 @@ public static class RigCore
 {
     public const string Guid = "dev.sewerlabs.seapowerrigging";
     public const string Name = "R.A.T.S. Rigging";
-    public const string Version = "1.0.0";
+    public const string Version = "1.0.1";
 
     internal static RigLog Log { get; } = new RigLog("SeaPowerRigging");
 
