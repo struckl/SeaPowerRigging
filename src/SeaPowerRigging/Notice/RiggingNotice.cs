@@ -31,8 +31,9 @@ internal sealed class RiggingNotice : MonoBehaviour
 
     private const string OfferText =
         "Your R.A.T.S. mods will need one more Workshop item: R.A.T.S. Rigging.\n\n" +
+        "• It is just a code library: the code the R.A.T.S. mods share\n" +
         "• Nothing is broken, they still run without it for now\n" +
-        "• Get Rigging adds it and switches it on, no restart needed";
+        "• \"Get Rigging\" adds it and switches it on, no restart needed";
 
     private const System.Reflection.BindingFlags Any =
         System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;

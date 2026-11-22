@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- The notice about the Workshop item is shorter: one sentence and two bullets, the buttons explain themselves.
+- The notice about the Workshop item is shorter: one sentence and three bullets; it says Rigging is just a code library, and the buttons explain themselves.
 
 ## 1.0.0 - unreleased - the shared part of the R.A.T.S. mods as a library of its own
 
