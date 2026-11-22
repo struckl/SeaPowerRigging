@@ -30,12 +30,9 @@ internal sealed class RiggingNotice : MonoBehaviour
     private const float DownloadSeconds = 300f;
 
     private const string OfferText =
-        "The R.A.T.S. mods now share one part, the Workshop item R.A.T.S. Rigging.\n\n" +
-        "• Your mods run on a copy built into them for now: nothing is broken\n" +
-        "• Get Rigging: subscribes to it and switches it on. No restart needed, it takes over at the next start\n" +
-        "• The built-in copy leaves the mods in a later update, and without Rigging they do not start then\n" +
-        "• Not now: nothing changes, and this asks again at the next start\n" +
-        "• Don't show this again: click it to tick it, and this stays away until the next Rigging update";
+        "Your R.A.T.S. mods will need one more Workshop item: R.A.T.S. Rigging.\n\n" +
+        "• Nothing is broken, they still run without it for now\n" +
+        "• Get Rigging adds it and switches it on, no restart needed";
 
     private const System.Reflection.BindingFlags Any =
         System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;

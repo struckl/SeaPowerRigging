@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The notice about the Workshop item is shorter: one sentence and two bullets, the buttons explain themselves.
+
 ## 1.0.0 - unreleased - the shared part of the R.A.T.S. mods as a library of its own
 
 - First version: the skeleton every R.A.T.S. mod used to compile into its own DLL is now one DLL, `SeaPowerRigging.dll`, for the game's current main version.
