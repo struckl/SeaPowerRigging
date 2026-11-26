@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased - builds that anyone can repeat
+
+- `build/Rats.Reproducible.props`: every mod and Rigging build the same bytes from the same source, SDK and game files
+  - why: players can rebuild a release and compare its SHA-256 with the published list
+- `global.json` pins the .NET SDK (8.0.423)
+
 ## 1.0.1 - 2026-11-22 - shorter notice
 
 - The notice about the Workshop item is shorter: one sentence and three bullets; it says Rigging is just a code library, and the buttons explain themselves.

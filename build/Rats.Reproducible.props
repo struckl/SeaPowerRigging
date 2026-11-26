@@ -1,0 +1,11 @@
+<Project>
+  <!--Builds that come out byte for byte the same: same source, same SDK (global.json in each repo), same game build and
+      packages = the same DLL, so anyone can rebuild a release and compare its SHA-256 with the published list.
+      PathMap keeps the folder a repo sits in (E:\Project\... here, anything elsewhere) out of the DLL and its PDB.
+      Imported by Rats.Mod.props (every mod) and by Rigging's own csproj. Keel has the same lines in src\Directory.Build.props.-->
+  <PropertyGroup>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <PathMap>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\..'))=/_/</PathMap>
+  </PropertyGroup>
+</Project>

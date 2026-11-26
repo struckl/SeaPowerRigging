@@ -27,6 +27,8 @@
     <RigItem Condition="'$(RigItem)' == ''">3843688859</RigItem>
   </PropertyGroup>
 
+  <Import Project="..\..\build\Rats.Reproducible.props" />
+
   <ItemGroup>
     <PackageReference Include="BepInEx.Core" Version="5.4.21" IncludeAssets="compile" PrivateAssets="all" />
     <PackageReference Include="HarmonyX" Version="2.9.0" IncludeAssets="compile" PrivateAssets="all" />
