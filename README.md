@@ -7,7 +7,7 @@ The part every R.A.T.S. mod shares, as one library: start, settings, hooks, miss
 | Questions | [R.A.T.S. Discord](https://discord.gg/CzuHd4f8Yf): help, ideas, talk; the first place to ask |
 | Version | `1.0.1` |
 | Game | Sea Power 0.9.3 (build 261116), the current main version |
-| Needs | R.A.T.S. Keel, the mod loader |
+| Needs | Keel, the mod loader |
 | Get it | [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3843688859) |
 | Settings | none to set; `BepInEx\config\dev.sewerlabs.seapowerrigging.cfg` holds the tick of its notice |
 | Bug reports | [R.A.T.S. feedback board](https://hub.sewerlabs.dev/s/rigging) |
